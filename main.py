@@ -3,14 +3,14 @@ import re
 import time
 from datetime import datetime
 
-def update_file_dates(base_path: str):
+def update_file_dates(base_path: str, skip_thumbs: bool = False):
     # Pattern to match filenames like: photo_1@26-10-2025_12-30-16_thumb.jpg
     pattern = re.compile(r'@(\d{2}-\d{2}-\d{4})_(\d{2}-\d{2}-\d{2})')
-
+    n_of_files_updated = 0
     for root, _, files in os.walk(base_path):
         for file in files:
             match = pattern.search(file)
-            if not match:
+            if (skip_thumbs and "thumb" in file) or not match:
                 continue
 
             file_path = os.path.join(root, file)
@@ -33,17 +33,19 @@ def update_file_dates(base_path: str):
             new_timestamp = time.mktime(new_dt.timetuple())
 
             os.utime(file_path, (new_timestamp, new_timestamp))
-
+            n_of_files_updated +=1
             print(
                 f"✅ {file}\n"
                 f"   Old Created: {old_create_time}\n"
                 f"   Old Modified: {old_mod_time}\n"
                 f"   ➜ New Date: {new_dt}\n"
             )
+    print(f"Done, updated {n_of_files_updated} files")
 
 if __name__ == "__main__":
     path = input("Enter the directory path to scan: ").strip()
     if not os.path.isdir(path):
         print("❌ Invalid path")
     else:
-        update_file_dates(path)
+        skip = input("Skip thumbnails? (y/n)").strip()
+        update_file_dates(path, skip_thumbs=skip.lower()=="y")
