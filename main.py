@@ -3,17 +3,20 @@ import re
 import time
 from datetime import datetime
 
-def update_file_dates(base_path: str, skip_thumbs: bool = False):
+def update_file_dates(base_path: str, skip_thumbs: bool = False, delete_thumbs: bool = True):
     # Pattern to match filenames like: photo_1@26-10-2025_12-30-16_thumb.jpg
     pattern = re.compile(r'@(\d{2}-\d{2}-\d{4})_(\d{2}-\d{2}-\d{2})')
     n_of_files_updated = 0
     for root, _, files in os.walk(base_path):
         for file in files:
+            file_path = os.path.join(root, file)
             match = pattern.search(file)
-            if (skip_thumbs and "thumb" in file) or not match:
+            if skip_thumbs and "thumb" in file:
+                if delete_thumbs:
+                    os.remove(file_path)
+            if not match:
                 continue
 
-            file_path = os.path.join(root, file)
             try:
                 stat_info = os.stat(file_path)
                 old_mod_time = datetime.fromtimestamp(stat_info.st_mtime)
@@ -48,4 +51,4 @@ if __name__ == "__main__":
         print("❌ Invalid path")
     else:
         skip = input("Skip thumbnails? (y/n)").strip()
-        update_file_dates(path, skip_thumbs=skip.lower()=="y")
+        update_file_dates(path, skip_thumbs=skip.lower()=="y", delete_thumbs=True)
